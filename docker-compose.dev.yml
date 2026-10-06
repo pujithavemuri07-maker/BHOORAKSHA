@@ -1,0 +1,51 @@
+version: '3.8'
+
+# Development overrides: mount source code for hot-reloading
+services:
+  gateway:
+    ports:
+      - "80:80"
+
+  auth-service:
+    volumes:
+      - ./auth-service/src:/app/src
+    environment:
+      - LOG_LEVEL=DEBUG
+
+  ai-orchestrator:
+    volumes:
+      - ./ai-agent-orchestrator/src:/app/src
+    environment:
+      - LOG_LEVEL=DEBUG
+
+  landing-page:
+    volumes:
+      - ./landing-page/src:/app/src
+
+  citizen-service:
+    volumes:
+      - ./citizen-service/src:/app/src
+
+  deo-service:
+    volumes:
+      - ./deo-service/src:/app/src
+
+  verifier-service:
+    volumes:
+      - ./verifier-service/src:/app/src
+
+  legal-service:
+    volumes:
+      - ./legal-service/src:/app/src
+
+  gis-service:
+    volumes:
+      - ./gis-service/src:/app/src
+
+  revenue-admin-service:
+    volumes:
+      - ./revenue-admin-service/src:/app/src
+
+  system-admin-service:
+    volumes:
+      - ./system-admin-service/src:/app/src

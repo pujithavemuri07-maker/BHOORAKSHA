@@ -1,0 +1,15 @@
+{
+  "version": "33",
+  "credential": {
+    "accessKey": "minioadmin",
+    "secretKey": "minioadmin"
+  },
+  "region": "ap-south-1",
+  "browser": "on",
+  "worm": "off",
+  "storageclass": {
+    "standard": "",
+    "rrs": ""
+  },
+  "notify": {}
+}

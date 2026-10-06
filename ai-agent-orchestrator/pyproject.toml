@@ -1,0 +1,27 @@
+[project]
+name = "bhooraksha-ai-orchestrator"
+version = "1.0.0"
+description = "Multi-Agent AI Pipeline (OCR, NER, GIS, Legal, Risk) for Bhooraksha"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.27.0",
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.1.0",
+    "celery>=5.3.6",
+    "redis>=5.0.1",
+    "sqlalchemy>=2.0.25",
+    "psycopg2-binary>=2.9.9",
+    "httpx>=0.26.0",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+pythonpath = [".", ".."]
+filterwarnings = [
+    "ignore::starlette.exceptions.StarletteDeprecationWarning",
+]

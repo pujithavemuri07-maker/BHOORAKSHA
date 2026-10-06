@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: bhooraksha
+  labels:
+    app.kubernetes.io/name: bhooraksha
+    app.kubernetes.io/part-of: land-records-platform

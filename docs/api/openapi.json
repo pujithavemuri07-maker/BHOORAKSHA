@@ -1,0 +1,139 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Bhooraksha Unified API",
+    "summary": "Unified REST & Asynchronous API for Bhooraksha Land Protection Platform",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Bhooraksha Architecture Team",
+      "email": "architecture@bhooraksha.gov.in"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost/api/v1",
+      "description": "Local Development Gateway"
+    },
+    {
+      "url": "https://bhooraksha.gov.in/api/v1",
+      "description": "Production Government Gateway"
+    }
+  ],
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "summary": "Authenticate user with email and password",
+        "tags": ["Authentication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "JWT Access and Refresh Tokens" },
+          "401": { "description": "Invalid credentials" }
+        }
+      }
+    },
+    "/auth/send-otp": {
+      "post": {
+        "summary": "Send OTP for phone authentication",
+        "tags": ["Authentication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["phone_number"],
+                "properties": {
+                  "phone_number": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OTP dispatched successfully" }
+        }
+      }
+    },
+    "/auth/verify-otp": {
+      "post": {
+        "summary": "Verify phone OTP and obtain session token",
+        "tags": ["Authentication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["phone_number", "otp_code"],
+                "properties": {
+                  "phone_number": { "type": "string" },
+                  "otp_code": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Phone verified and token returned" }
+        }
+      }
+    },
+    "/ai/documents/process": {
+      "post": {
+        "summary": "Submit deed document for multi-agent AI verification",
+        "tags": ["AI Verification Pipeline"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["document_id", "application_id", "file_url"],
+                "properties": {
+                  "document_id": { "type": "string", "format": "uuid" },
+                  "application_id": { "type": "string", "format": "uuid" },
+                  "file_url": { "type": "string" },
+                  "language": { "type": "string", "default": "en" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": { "description": "Task enqueued for processing" }
+        }
+      }
+    },
+    "/ai/verification/status/{task_id}": {
+      "get": {
+        "summary": "Retrieve real-time status of verification pipeline",
+        "tags": ["AI Verification Pipeline"],
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Task status and verification results" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,385 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+  namespace: bhooraksha
+  labels:
+    app: auth-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: auth-service
+  template:
+    metadata:
+      labels:
+        app: auth-service
+    spec:
+      containers:
+        - name: auth-service
+          image: bhooraksha/auth-service:latest
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: bhooraksha-config
+            - secretRef:
+                name: bhooraksha-secrets
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "512Mi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  namespace: bhooraksha
+spec:
+  selector:
+    app: auth-service
+  ports:
+    - port: 8000
+      targetPort: 8000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-agent-orchestrator
+  namespace: bhooraksha
+  labels:
+    app: ai-agent-orchestrator
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ai-agent-orchestrator
+  template:
+    metadata:
+      labels:
+        app: ai-agent-orchestrator
+    spec:
+      containers:
+        - name: ai-agent-orchestrator
+          image: bhooraksha/ai-agent-orchestrator:latest
+          ports:
+            - containerPort: 8001
+          envFrom:
+            - configMapRef:
+                name: bhooraksha-config
+            - secretRef:
+                name: bhooraksha-secrets
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "2000m"
+              memory: "4Gi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            initialDelaySeconds: 15
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-agent-orchestrator
+  namespace: bhooraksha
+spec:
+  selector:
+    app: ai-agent-orchestrator
+  ports:
+    - port: 8001
+      targetPort: 8001
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: landing-page
+  namespace: bhooraksha
+  labels:
+    app: landing-page
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: landing-page
+  template:
+    metadata:
+      labels:
+        app: landing-page
+    spec:
+      containers:
+        - name: landing-page
+          image: bhooraksha/landing-page:latest
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: landing-page
+  namespace: bhooraksha
+spec:
+  selector:
+    app: landing-page
+  ports:
+    - port: 8080
+      targetPort: 8080
+---
+# Citizen Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: citizen-service
+  namespace: bhooraksha
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: citizen-service
+  template:
+    metadata:
+      labels:
+        app: citizen-service
+    spec:
+      containers:
+        - name: citizen-service
+          image: bhooraksha/citizen-service:latest
+          ports:
+            - containerPort: 3000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: citizen-service
+  namespace: bhooraksha
+spec:
+  selector:
+    app: citizen-service
+  ports:
+    - port: 3000
+      targetPort: 3000
+---
+# DEO Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deo-service
+  namespace: bhooraksha
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: deo-service
+  template:
+    metadata:
+      labels:
+        app: deo-service
+    spec:
+      containers:
+        - name: deo-service
+          image: bhooraksha/deo-service:latest
+          ports:
+            - containerPort: 3001
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: deo-service
+  namespace: bhooraksha
+spec:
+  selector:
+    app: deo-service
+  ports:
+    - port: 3001
+      targetPort: 3001
+---
+# Verifier Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: verifier-service
+  namespace: bhooraksha
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: verifier-service
+  template:
+    metadata:
+      labels:
+        app: verifier-service
+    spec:
+      containers:
+        - name: verifier-service
+          image: bhooraksha/verifier-service:latest
+          ports:
+            - containerPort: 3002
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: verifier-service
+  namespace: bhooraksha
+spec:
+  selector:
+    app: verifier-service
+  ports:
+    - port: 3002
+      targetPort: 3002
+---
+# Legal Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: legal-service
+  namespace: bhooraksha
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: legal-service
+  template:
+    metadata:
+      labels:
+        app: legal-service
+    spec:
+      containers:
+        - name: legal-service
+          image: bhooraksha/legal-service:latest
+          ports:
+            - containerPort: 3003
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: legal-service
+  namespace: bhooraksha
+spec:
+  selector:
+    app: legal-service
+  ports:
+    - port: 3003
+      targetPort: 3003
+---
+# GIS Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gis-service
+  namespace: bhooraksha
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: gis-service
+  template:
+    metadata:
+      labels:
+        app: gis-service
+    spec:
+      containers:
+        - name: gis-service
+          image: bhooraksha/gis-service:latest
+          ports:
+            - containerPort: 3004
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gis-service
+  namespace: bhooraksha
+spec:
+  selector:
+    app: gis-service
+  ports:
+    - port: 3004
+      targetPort: 3004
+---
+# Revenue Admin Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: revenue-admin-service
+  namespace: bhooraksha
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: revenue-admin-service
+  template:
+    metadata:
+      labels:
+        app: revenue-admin-service
+    spec:
+      containers:
+        - name: revenue-admin-service
+          image: bhooraksha/revenue-admin-service:latest
+          ports:
+            - containerPort: 3005
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: revenue-admin-service
+  namespace: bhooraksha
+spec:
+  selector:
+    app: revenue-admin-service
+  ports:
+    - port: 3005
+      targetPort: 3005
+---
+# System Admin Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: system-admin-service
+  namespace: bhooraksha
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: system-admin-service
+  template:
+    metadata:
+      labels:
+        app: system-admin-service
+    spec:
+      containers:
+        - name: system-admin-service
+          image: bhooraksha/system-admin-service:latest
+          ports:
+            - containerPort: 3006
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: system-admin-service
+  namespace: bhooraksha
+spec:
+  selector:
+    app: system-admin-service
+  ports:
+    - port: 3006
+      targetPort: 3006

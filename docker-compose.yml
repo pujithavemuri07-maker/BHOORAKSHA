@@ -1,0 +1,453 @@
+version: '3.8'
+
+# ============================================================
+# BHOO RAKSHA – Full Application Stack
+# ============================================================
+
+services:
+  # ============================================================
+  # 1. INFRASTRUCTURE SERVICES
+  # ============================================================
+
+  postgres:
+    image: postgis/postgis:15-3.4
+    container_name: bhooraksha-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: bhooraksha
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - bhooraksha-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: bhooraksha-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      - ./infrastructure/redis/redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - bhooraksha-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: bhooraksha-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - ./infrastructure/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+    networks:
+      - bhooraksha-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    container_name: bhooraksha-minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_DEFAULT_BUCKETS: bhooraksha-documents:public,bhooraksha-verified:public
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+      - ./infrastructure/minio/config.json:/root/.minio/config.json
+    command: server /data --console-address ":9001"
+    networks:
+      - bhooraksha-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # ============================================================
+  # 2. API GATEWAY
+  # ============================================================
+
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    container_name: bhooraksha-gateway
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./gateway/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./gateway/nginx.dev.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./logs/nginx:/var/log/nginx
+    depends_on:
+      - landing-page
+      - auth-service
+      - citizen-service
+      - deo-service
+      - verifier-service
+      - legal-service
+      - gis-service
+      - revenue-admin-service
+      - system-admin-service
+      - ai-orchestrator
+    networks:
+      - bhooraksha-network
+
+  # ============================================================
+  # 3. PUBLIC LANDING PAGE (Port 8080)
+  # ============================================================
+
+  landing-page:
+    build:
+      context: ./landing-page
+      dockerfile: Dockerfile
+    container_name: bhooraksha-landing
+    restart: unless-stopped
+    environment:
+      - VITE_API_BASE_URL=http://localhost/api/v1
+    ports:
+      - "8080:8080"
+    depends_on:
+      - auth-service
+    networks:
+      - bhooraksha-network
+
+  # ============================================================
+  # 4. AUTH SERVICE (Port 8000)
+  # ============================================================
+
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    container_name: bhooraksha-auth
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/bhooraksha}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - SECRET_KEY=${SECRET_KEY:-bhooraksha-development-super-secret-key-2026!}
+      - JWT_ALGORITHM=${JWT_ALGORITHM:-HS256}
+      - JWT_EXPIRE_MINUTES=${JWT_EXPIRE_MINUTES:-60}
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./logs/auth-service:/app/logs
+    networks:
+      - bhooraksha-network
+
+  # ============================================================
+  # 5. CITIZEN SERVICE (Port 3000)
+  # ============================================================
+
+  citizen-service:
+    build:
+      context: ./citizen-service
+      dockerfile: Dockerfile
+    container_name: bhooraksha-citizen
+    restart: unless-stopped
+    environment:
+      - VITE_API_BASE_URL=http://localhost/api/v1
+      - VITE_WS_URL=ws://localhost/ws
+    ports:
+      - "3000:3000"
+    depends_on:
+      - auth-service
+      - ai-orchestrator
+    networks:
+      - bhooraksha-network
+
+  # ============================================================
+  # 6. DEO SERVICE (Port 3001)
+  # ============================================================
+
+  deo-service:
+    build:
+      context: ./deo-service
+      dockerfile: Dockerfile
+    container_name: bhooraksha-deo
+    restart: unless-stopped
+    environment:
+      - VITE_API_BASE_URL=http://localhost/api/v1
+    ports:
+      - "3001:3001"
+    depends_on:
+      - auth-service
+      - ai-orchestrator
+    networks:
+      - bhooraksha-network
+
+  # ============================================================
+  # 7. VERIFIER SERVICE (Port 3002)
+  # ============================================================
+
+  verifier-service:
+    build:
+      context: ./verifier-service
+      dockerfile: Dockerfile
+    container_name: bhooraksha-verifier
+    restart: unless-stopped
+    environment:
+      - VITE_API_BASE_URL=http://localhost/api/v1
+    ports:
+      - "3002:3002"
+    depends_on:
+      - auth-service
+      - ai-orchestrator
+    networks:
+      - bhooraksha-network
+
+  # ============================================================
+  # 8. LEGAL SERVICE (Port 3003)
+  # ============================================================
+
+  legal-service:
+    build:
+      context: ./legal-service
+      dockerfile: Dockerfile
+    container_name: bhooraksha-legal
+    restart: unless-stopped
+    environment:
+      - VITE_API_BASE_URL=http://localhost/api/v1
+    ports:
+      - "3003:3003"
+    depends_on:
+      - auth-service
+      - ai-orchestrator
+    networks:
+      - bhooraksha-network
+
+  # ============================================================
+  # 9. GIS SERVICE (Port 3004)
+  # ============================================================
+
+  gis-service:
+    build:
+      context: ./gis-service
+      dockerfile: Dockerfile
+    container_name: bhooraksha-gis
+    restart: unless-stopped
+    environment:
+      - VITE_API_BASE_URL=http://localhost/api/v1
+      - VITE_MAP_TILE_URL=https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png
+    ports:
+      - "3004:3004"
+    depends_on:
+      - auth-service
+      - ai-orchestrator
+    networks:
+      - bhooraksha-network
+
+  # ============================================================
+  # 10. REVENUE ADMIN SERVICE (Port 3005)
+  # ============================================================
+
+  revenue-admin-service:
+    build:
+      context: ./revenue-admin-service
+      dockerfile: Dockerfile
+    container_name: bhooraksha-revenue
+    restart: unless-stopped
+    environment:
+      - VITE_API_BASE_URL=http://localhost/api/v1
+    ports:
+      - "3005:3005"
+    depends_on:
+      - auth-service
+      - ai-orchestrator
+    networks:
+      - bhooraksha-network
+
+  # ============================================================
+  # 11. SYSTEM ADMIN SERVICE (Port 3006)
+  # ============================================================
+
+  system-admin-service:
+    build:
+      context: ./system-admin-service
+      dockerfile: Dockerfile
+    container_name: bhooraksha-admin
+    restart: unless-stopped
+    environment:
+      - VITE_API_BASE_URL=http://localhost/api/v1
+    ports:
+      - "3006:3006"
+    depends_on:
+      - auth-service
+      - ai-orchestrator
+    networks:
+      - bhooraksha-network
+
+  # ============================================================
+  # 12. AI AGENT ORCHESTRATOR (Port 8001)
+  # ============================================================
+
+  ai-orchestrator:
+    build:
+      context: ./ai-agent-orchestrator
+      dockerfile: Dockerfile
+    container_name: bhooraksha-ai
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/bhooraksha}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - MODEL_PATH=/models
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-mock-gemini-key}
+      - OCR_MODEL=${OCR_MODEL:-chitrapathak-1}
+      - NER_MODEL=${NER_MODEL:-muril-address-ner}
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./models:/models
+      - ./storage:/storage
+      - ./logs/ai-orchestrator:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - bhooraksha-network
+
+  # ============================================================
+  # 13. CELERY WORKER (Background Tasks)
+  # ============================================================
+
+  celery-worker:
+    build:
+      context: ./ai-agent-orchestrator
+      dockerfile: Dockerfile
+    container_name: bhooraksha-celery
+    restart: unless-stopped
+    command: celery -A app.tasks.celery_app worker --loglevel=info --concurrency=4
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/bhooraksha}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - ./models:/models
+      - ./storage:/storage
+      - ./logs/celery:/app/logs
+    depends_on:
+      - redis
+      - postgres
+      - rabbitmq
+    networks:
+      - bhooraksha-network
+
+  # ============================================================
+  # 14. CELERY BEAT (Scheduler)
+  # ============================================================
+
+  celery-beat:
+    build:
+      context: ./ai-agent-orchestrator
+      dockerfile: Dockerfile
+    container_name: bhooraksha-celery-beat
+    restart: unless-stopped
+    command: celery -A app.tasks.celery_app beat --loglevel=info
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/bhooraksha}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - redis
+      - rabbitmq
+    networks:
+      - bhooraksha-network
+
+  # ============================================================
+  # 15. MONITORING
+  # ============================================================
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: bhooraksha-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infrastructure/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      - bhooraksha-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: bhooraksha-grafana
+    restart: unless-stopped
+    ports:
+      - "3007:3007"
+    environment:
+      - GF_SERVER_HTTP_PORT=3007
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infrastructure/monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+    depends_on:
+      - prometheus
+    networks:
+      - bhooraksha-network
+
+# ============================================================
+# NETWORKS & VOLUMES
+# ============================================================
+
+networks:
+  bhooraksha-network:
+    driver: bridge
+    name: bhooraksha-network
+
+volumes:
+  postgres_data:
+    name: bhooraksha-postgres-data
+  redis_data:
+    name: bhooraksha-redis-data
+  rabbitmq_data:
+    name: bhooraksha-rabbitmq-data
+  minio_data:
+    name: bhooraksha-minio-data
+  prometheus_data:
+    name: bhooraksha-prometheus-data
+  grafana_data:
+    name: bhooraksha-grafana-data

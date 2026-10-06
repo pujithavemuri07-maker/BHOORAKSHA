@@ -1,0 +1,31 @@
+{
+  "name": "bhooraksha-monorepo",
+  "private": true,
+  "workspaces": [
+    "landing-page",
+    "citizen-service",
+    "deo-service",
+    "verifier-service",
+    "legal-service",
+    "gis-service",
+    "revenue-admin-service",
+    "system-admin-service",
+    "shared"
+  ],
+  "scripts": {
+    "dev": "concurrently -k -n \"landing,citizen,deo,verifier,legal,gis,revenue,admin\" -c \"cyan,blue,green,yellow,magenta,red,blueBright,greenBright\" \"npm:dev:landing\" \"npm:dev:citizen\" \"npm:dev:deo\" \"npm:dev:verifier\" \"npm:dev:legal\" \"npm:dev:gis\" \"npm:dev:revenue\" \"npm:dev:admin\"",
+    "dev:all": "concurrently -k -n \"landing,citizen,deo,verifier,legal,gis,revenue,admin\" -c \"cyan,blue,green,yellow,magenta,red,blueBright,greenBright\" \"npm:dev:landing\" \"npm:dev:citizen\" \"npm:dev:deo\" \"npm:dev:verifier\" \"npm:dev:legal\" \"npm:dev:gis\" \"npm:dev:revenue\" \"npm:dev:admin\"",
+    "dev:landing": "npm --workspace=landing-page run dev",
+    "dev:citizen": "npm --workspace=citizen-service run dev",
+    "dev:deo": "npm --workspace=deo-service run dev",
+    "dev:verifier": "npm --workspace=verifier-service run dev",
+    "dev:legal": "npm --workspace=legal-service run dev",
+    "dev:gis": "npm --workspace=gis-service run dev",
+    "dev:revenue": "npm --workspace=revenue-admin-service run dev",
+    "dev:admin": "npm --workspace=system-admin-service run dev",
+    "build": "npm run build --workspaces --if-present"
+  },
+  "devDependencies": {
+    "concurrently": "10.0.5"
+  }
+}

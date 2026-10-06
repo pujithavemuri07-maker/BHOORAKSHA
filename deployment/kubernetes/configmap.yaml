@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bhooraksha-config
+  namespace: bhooraksha
+data:
+  APP_ENV: "production"
+  LOG_LEVEL: "INFO"
+  POSTGRES_DB: "bhooraksha_db"
+  POSTGRES_HOST: "postgres.bhooraksha.svc.cluster.local"
+  POSTGRES_PORT: "5432"
+  REDIS_HOST: "redis.bhooraksha.svc.cluster.local"
+  REDIS_PORT: "6379"
+  RABBITMQ_HOST: "rabbitmq.bhooraksha.svc.cluster.local"
+  RABBITMQ_PORT: "5672"
+  MINIO_ENDPOINT: "minio.bhooraksha.svc.cluster.local:9000"
+  MINIO_BUCKET_NAME: "bhooraksha-documents"
+  AUTH_SERVICE_URL: "http://auth-service.bhooraksha.svc.cluster.local:8000"
+  AI_ORCHESTRATOR_URL: "http://ai-agent-orchestrator.bhooraksha.svc.cluster.local:8001"
+  VITE_API_GATEWAY_URL: "https://bhooraksha.gov.in/api/v1"

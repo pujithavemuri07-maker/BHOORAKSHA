@@ -1,0 +1,14 @@
+apiVersion: v2
+name: bhooraksha
+description: A Helm chart for Bhooraksha Land Protection Platform
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - land-records
+  - digital-india
+  - postgis
+  - ai-verification
+maintainers:
+  - name: Bhooraksha Architecture Team
+    email: architecture@bhooraksha.gov.in

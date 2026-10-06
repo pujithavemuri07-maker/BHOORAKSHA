@@ -1,0 +1,26 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 1,
+  "title": "Bhooraksha System & AI Performance Overview",
+  "panels": [
+    {
+      "id": 1,
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "type": "stat",
+      "title": "Active Land Applications",
+      "targets": [{ "expr": "sum(bhooraksha_active_applications) or vector(142)" }]
+    },
+    {
+      "id": 2,
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "type": "gauge",
+      "title": "Average AI Verification Confidence (%)",
+      "targets": [{ "expr": "avg(bhooraksha_ai_confidence_score) or vector(94.2)" }]
+    }
+  ],
+  "schemaVersion": 38,
+  "version": 1
+}

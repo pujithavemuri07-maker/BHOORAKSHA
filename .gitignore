@@ -1,0 +1,74 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+env/
+venv/
+.venv/
+ENV/
+
+# Distribution / packaging
+build/
+dist/
+.vite/
+*.egg-info/
+.eggs/
+
+# Environments
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Storage and runtime data
+*.db
+storage/documents/*
+!storage/documents/.gitkeep
+storage/temp/*
+!storage/temp/.gitkeep
+models/*
+!models/.gitkeep
+
+# IDEs and editors
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+Thumbs.db
+
+# Celery & testing
+celerybeat-schedule
+celerybeat.pid
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local database / Redis dumps
+*.rdb
+*.sql.gz
+
+# Scratch scripts
+scratch/
+
+# Local Netlify folder
+.netlify
+
+# Temporary test directories and cache
+.freebuff/
+temp_test_doc/
+ai-agent-orchestrator/temp_test_doc/
+test_screenshots/

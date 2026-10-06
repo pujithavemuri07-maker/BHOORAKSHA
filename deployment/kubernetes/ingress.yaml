@@ -1,0 +1,89 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: bhooraksha-ingress
+  namespace: bhooraksha
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  tls:
+    - hosts:
+        - bhooraksha.gov.in
+      secretName: bhooraksha-tls
+  rules:
+    - host: bhooraksha.gov.in
+      http:
+        paths:
+          - path: /api/v1/auth
+            pathType: Prefix
+            backend:
+              service:
+                name: auth-service
+                port:
+                  number: 8000
+          - path: /api/v1/ai
+            pathType: Prefix
+            backend:
+              service:
+                name: ai-agent-orchestrator
+                port:
+                  number: 8001
+          - path: /citizen
+            pathType: Prefix
+            backend:
+              service:
+                name: citizen-service
+                port:
+                  number: 3000
+          - path: /deo
+            pathType: Prefix
+            backend:
+              service:
+                name: deo-service
+                port:
+                  number: 3001
+          - path: /verifier
+            pathType: Prefix
+            backend:
+              service:
+                name: verifier-service
+                port:
+                  number: 3002
+          - path: /legal
+            pathType: Prefix
+            backend:
+              service:
+                name: legal-service
+                port:
+                  number: 3003
+          - path: /gis
+            pathType: Prefix
+            backend:
+              service:
+                name: gis-service
+                port:
+                  number: 3004
+          - path: /revenue
+            pathType: Prefix
+            backend:
+              service:
+                name: revenue-admin-service
+                port:
+                  number: 3005
+          - path: /admin
+            pathType: Prefix
+            backend:
+              service:
+                name: system-admin-service
+                port:
+                  number: 3006
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: landing-page
+                port:
+                  number: 8080
